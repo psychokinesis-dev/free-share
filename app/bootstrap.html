@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="UTF-8">
+    <title>初始化配置</title>
+    <link rel="stylesheet" type="text/css" href="components/milligram/dist/milligram.css">
+  </head>
+  <body>
+      <script>
+          const ipcRenderer = require('electron').ipcRenderer;
+          const psychokinesis = require('psychokinesis');
+          
+          let waiting = false;
+          
+          function showErrorMsg(msg) {
+              let prompt = document.getElementById("prompt");
+              prompt.innerHTML = '<strong>' + msg + '</strong>';
+              prompt.style.display = 'inline';
+          }
+          
+          function submitConfig() {
+              if (waiting) {
+                  showErrorMsg('请稍等...');
+                  return false;
+              }
+              
+              let selfNode = document.getElementById("selfField").value;
+              let entryNode = document.getElementById("entryField").value;
+              
+              let self = selfNode.split(':');
+              let entry = entryNode.split(':');
+              
+              if (self.length >= 1 && entry.length >= 2) {
+                  let config = {
+                      domain: self[0],
+                      port: self.length > 1 ? self[1] : undefined,
+                      entryNode: {
+                          host: entry[0],
+                          dhtPort: entry[1],
+                          proxyPort: entry.length > 2 ? entry[2] : undefined
+                      }
+                  };
+                  
+                  let psyc = psychokinesis.createServer(config, (req, resp) => {}); 
+                  
+                  waiting = true;
+                  
+                  psyc.on('ready', () => {
+                      psyc.destroy();
+                      ipcRenderer.send('set-config', config);
+                      
+                      waiting = false;
+                  });
+                  
+                  psyc.on('error', (err) => {
+                      psyc.destroy();
+                      showErrorMsg('入口地址不可达！');
+                      
+                      waiting = false;
+                  });
+              } else {
+                  showErrorMsg('域名或者入口地址格式不正确！');
+              }
+              
+              return false;
+          };
+      </script>
+      <form onsubmit="return submitConfig()">
+          <fieldset>
+              <label for="selfField">域名：</label>
+              <input type="text" placeholder="mydomain.com" id="selfField">
+              <label for="entryField">入口地址：</label>
+              <input type="text" placeholder="entrynode.com:8181:18181" id="entryField">
+              <div>
+                  <span id="prompt" style="display: none; color: red"></span>
+              </div>
+              <input class="button-primary" type="submit" value="确定">
+          </fieldset>
+      </form>
+  </body>
+</html>

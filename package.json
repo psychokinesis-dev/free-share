@@ -1,0 +1,32 @@
+{
+  "name": "free-share",
+  "version": "1.0.0",
+  "description": "Share anything with one link",
+  "main": "index.js",
+  "scripts": {
+    "start": "electron index.js",
+    "pack": "electron-packager ./ free-share --all --out ../free-share-dist --overwrite",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/psychokinesis-dev/free-share.git"
+  },
+  "keywords": [
+    "p2p"
+  ],
+  "author": "covertness",
+  "license": "MIT",
+  "devDependencies": {
+    "electron-packager": "^7.0.1",
+    "electron-prebuilt": "^1.1.0"
+  },
+  "dependencies": {
+    "lodash": "^4.11.1",
+    "mkdirp": "^0.5.1",
+    "psychokinesis": "^1.0.2",
+    "send": "^0.13.2",
+    "winston": "^2.2.0",
+    "xdg-basedir": "^2.0.0"
+  }
+}

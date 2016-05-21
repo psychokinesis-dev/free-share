@@ -1,0 +1,30 @@
+{
+  "name": "free-share",
+  "description": "Share anything with one link",
+  "main": "index.js",
+  "authors": [
+    "covertness"
+  ],
+  "license": "MIT",
+  "keywords": [
+    "p2p"
+  ],
+  "moduleType": [
+    "es6"
+  ],
+  "homepage": "",
+  "ignore": [
+    "**/.*",
+    "node_modules",
+    "app/components",
+    "test",
+    "tests"
+  ],
+  "dependencies": {
+    "angular": "1.4.9",
+    "spin.js": "^2.3.2",
+    "angular-route": "1.4.9",
+    "angular-spinner": "^0.8.1",
+    "milligram": "^1.1.0"
+  }
+}

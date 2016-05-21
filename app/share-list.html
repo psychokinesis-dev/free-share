@@ -1,0 +1,19 @@
+<table>
+    <thead>
+        <tr>
+            <th>文件名</th>
+            <th>URL</th>
+            <th>操作</th>
+        </tr>
+    </thead>
+    <tbody>
+        <tr ng-repeat="file in files">
+            <td>{{file.name}}</td>
+            <td>{{file.url}}</td>
+            <td>
+                <button id="copy-btn-$index" ng-click="copyURL(files, $index)">复制 URL</button>
+                <a class="button" href="" ng-click="remove(files, $index);files.splice($index,1)">移除</a></td>
+        </tr>
+    </tbody>
+</table>
+<div id="drop">请将要分享的文件拖放到这里</div>
