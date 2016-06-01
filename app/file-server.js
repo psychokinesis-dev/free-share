@@ -103,7 +103,7 @@ class FileServer {
     _covertFileInfo(filename) {
         return {
             name: filename,
-            url: 'http://' + path.join(this.config.domain + ':' + (this.config.entryNode.dhtPort ? this.config.entryNode.dhtPort : this.config.port), filename).replace(/\\/g, '\/')
+            url: 'http://' + path.join(this.config.entryNode.host + ':' + (this.config.entryNode.dhtPort ? this.config.entryNode.dhtPort : this.config.port), this.config.domain, filename).replace(/\\/g, '\/')
         };
     }
 }

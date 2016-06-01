@@ -1,3 +1,4 @@
 app/components/
 node_modules/
 .vscode/
+*.data
