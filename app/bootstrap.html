@@ -30,14 +30,17 @@
               let self = selfNode.split(':');
               let entry = entryNode.split(':');
               
-              if (self.length >= 1 && entry.length >= 2) {
+              if (self.length >= 1 && 
+                  entry.length === 3 && 
+                  /^(?!:\/\/)([a-zA-Z0-9]+\.)?[a-zA-Z0-9][a-zA-Z0-9-]+\.[a-zA-Z]{2,6}?$/i.test(self[0])
+              ) {
                   let config = {
                       domain: self[0],
                       port: self.length > 1 ? self[1] : undefined,
                       entryNode: {
                           host: entry[0],
                           dhtPort: entry[1],
-                          proxyPort: entry.length > 2 ? entry[2] : undefined
+                          proxyPort: entry[2]
                       }
                   };
                   
