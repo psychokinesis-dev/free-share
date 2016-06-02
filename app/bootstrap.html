@@ -9,6 +9,9 @@
       <script>
           const ipcRenderer = require('electron').ipcRenderer;
           const psychokinesis = require('psychokinesis');
+          const uuid = require('uuid');
+          const request = require('request');
+          const math = require('mathjs');
           
           let waiting = false;
           
@@ -30,13 +33,12 @@
               let self = selfNode.split(':');
               let entry = entryNode.split(':');
               
-              if (self.length >= 1 && 
+              if (self.length === 1 && 
                   entry.length === 3 && 
                   /^(?!:\/\/)([a-zA-Z0-9]+\.)?[a-zA-Z0-9][a-zA-Z0-9-]+\.[a-zA-Z]{2,6}?$/i.test(self[0])
               ) {
                   let config = {
                       domain: self[0],
-                      port: self.length > 1 ? self[1] : undefined,
                       entryNode: {
                           host: entry[0],
                           dhtPort: entry[1],
@@ -80,5 +82,20 @@
               <input class="button-primary" type="submit" value="确定">
           </fieldset>
       </form>
+      <script>
+          document.getElementById("selfField").value = uuid.v4() + '.psy';
+          
+          request('https://raw.githubusercontent.com/psychokinesis-dev/nodelist/master/nodes.txt', function (error, response, body) {
+              if (!error && response.statusCode == 200) {
+                  let nodeList = new Buffer(body, 'base64').toString('ascii');
+                  let nodes = JSON.parse(nodeList);
+                  
+                  if (nodes.length > 0) {
+                      let randNode = nodes[math.randomInt(nodes.length)];
+                      document.getElementById("entryField").value = randNode.host + ':' + randNode.dhtPort + ':' + randNode.proxyPort;
+                  }
+                }
+          });
+      </script>
   </body>
 </html>
