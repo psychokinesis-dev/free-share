@@ -1,6 +1,6 @@
 {
   "name": "free-share",
-  "version": "1.0.0",
+  "version": "0.1.1",
   "description": "Share anything with one link",
   "main": "index.js",
   "scripts": {
@@ -25,7 +25,7 @@
     "lodash": "^4.11.1",
     "mathjs": "^3.2.1",
     "mkdirp": "^0.5.1",
-    "psychokinesis": "^1.0.4",
+    "psychokinesis": "^1.0.5",
     "request": "^2.72.0",
     "send": "^0.13.2",
     "uuid": "^2.0.2",
