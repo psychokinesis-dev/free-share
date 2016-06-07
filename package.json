@@ -5,7 +5,8 @@
   "main": "index.js",
   "scripts": {
     "start": "electron index.js",
-    "pack": "electron-packager ./ free-share --all --out ../free-share-dist --overwrite",
+    "pack": "electron-packager ./ free-share --platform=win32,linux --arch=all --icon ./app/icon.ico --out ../free-share-dist --overwrite",
+    "packmac": "electron-packager ./ free-share --platform=darwin --arch=x64 --icon ./app/icon.icns --out ../free-share-dist --overwrite",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "repository": {

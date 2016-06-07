@@ -3,12 +3,12 @@
 const electron = require('electron');
 const app = electron.app;
 const BrowserWindow = electron.BrowserWindow;
-const ipcMain = require('electron').ipcMain;
+const ipcMain = electron.ipcMain;
 
 let mainWindow = null;
 
 app.on('ready', () => {
-    mainWindow = new BrowserWindow({width: 800, height: 600});
+    mainWindow = new BrowserWindow({width: 800, height: 600, icon: '/' + __dirname + '/app/icon.png'});
     
     mainWindow.loadURL('file://' + __dirname + '/app/index.html');
     

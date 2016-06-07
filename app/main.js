@@ -30,7 +30,7 @@ angular.module('free-share', ['ngRoute', 'angularSpinner'])
         fs.readFile(path.join(configDir, 'config.json'), (err, data) => {
             if (err) {
                 if (err.code === 'ENOENT') {
-                    let bootstrapWin = new BrowserWindow({ width: 600, height: 300, alwaysOnTop: true });
+                    let bootstrapWin = new BrowserWindow({ width: 600, height: 300, alwaysOnTop: true, icon: '/' + __dirname + '/icon.png' });
                     // bootstrapWin.webContents.openDevTools();
                     bootstrapWin.loadURL('file://' + __dirname + '/bootstrap.html');
                     
