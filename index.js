@@ -8,7 +8,7 @@ const ipcMain = electron.ipcMain;
 let mainWindow = null;
 
 app.on('ready', () => {
-    mainWindow = new BrowserWindow({width: 800, height: 600, icon: '/' + __dirname + '/app/icon.png'});
+    mainWindow = new BrowserWindow({width: 800, height: 600, icon: __dirname + '/app/icon.ico'});
     
     mainWindow.loadURL('file://' + __dirname + '/app/index.html');
     
