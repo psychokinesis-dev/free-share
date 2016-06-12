@@ -31,6 +31,11 @@ class FileServer {
     }
     
     start(cb) {
+        if (this.started) {
+            cb();
+            return;
+        }
+        
         fs.readFile(path.join(configDir, 'files.json'), (err, data) => {
             if (err) {
                 this.fileMap = new Map();
@@ -55,11 +60,8 @@ class FileServer {
             });
 
             this.psyc.on('ready', () => {
-                if (this.config.port) {
-                    this.psyc.listen('127.0.0.1', this.config.port, cb);
-                } else {
-                    cb();
-                }
+                this.started = true;
+                cb();
             });
         });
     }

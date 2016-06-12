@@ -12,7 +12,7 @@
             <td>{{file.url}}</td>
             <td>
                 <button id="copy-btn-$index" ng-click="copyURL(files, $index)">复制 URL</button>
-                <a class="button" href="" ng-click="remove(files, $index);files.splice($index,1)">移除</a></td>
+                <a class="button" href="" ng-click="remove(files, $index)">移除</a></td>
         </tr>
     </tbody>
 </table>
