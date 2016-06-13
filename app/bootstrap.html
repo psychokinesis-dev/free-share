@@ -85,7 +85,7 @@
       <script>
           document.getElementById("selfField").value = uuid.v4() + '.psy';
           
-          request('https://raw.githubusercontent.com/psychokinesis-dev/nodelist/master/nodes.txt', function (error, response, body) {
+          request('https://coding.net/u/covertness/p/nodelist/git/raw/master/nodes.txt', function (error, response, body) {
               if (!error && response.statusCode == 200) {
                   let nodeList = new Buffer(body, 'base64').toString('ascii');
                   let nodes = JSON.parse(nodeList);
