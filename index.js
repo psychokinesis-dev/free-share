@@ -34,6 +34,8 @@ const shouldQuit = app.makeSingleInstance((commandLine, workingDirectory) => {
         if (!mainWindow.isVisible()) mainWindow.show();
         if (mainWindow.isMinimized()) mainWindow.restore();
         mainWindow.focus();
+    } else {
+        displayMainWindow();
     }
 });
 
