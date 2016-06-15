@@ -25,6 +25,7 @@
     "spin.js": "^2.3.2",
     "angular-route": "1.4.9",
     "angular-spinner": "^0.8.1",
-    "milligram": "^1.1.0"
+    "milligram": "^1.1.0",
+    "angular-qrcode": "monospaced/angular-qrcode#^6.2.1"
   }
 }

@@ -14,7 +14,7 @@ const configDir = path.join(xdgBasedir.config || path.join(os.tmpdir(), '.config
 
 let fileArray = null;
 
-angular.module('free-share', ['ngRoute', 'angularSpinner'])
+angular.module('free-share', ['ngRoute', 'angularSpinner', 'monospaced.qrcode'])
     .controller('LoadingController', ($scope, $route, $routeParams, $location) => {
         ipcRenderer.once('bootstrap', function (event) {
             let bootstrapWin = new BrowserWindow({ width: 600, height: 300, alwaysOnTop: true, icon: __dirname + '/icon.ico' });
@@ -59,13 +59,6 @@ angular.module('free-share', ['ngRoute', 'angularSpinner'])
             $scope.files = fileArray;
             $scope.$apply();
         });
-        
-        let addFile = function (fileInfo) {
-            $scope.files.push({
-                name: fileInfo.name,
-                url: fileInfo.url
-            });
-        };
         
         $scope.remove = function (files, index) {
             let fileName = files[index].name;

@@ -11,11 +11,8 @@ const fs = require('fs');
 const xdgBasedir = require('xdg-basedir');
 const winston = require('winston');
 const mkdirp = require('mkdirp');
-const FileServer = require('./app/file-server');
 
-let mainWindow = null;
-let tray = null;
-let fileServer = new FileServer();
+
 const configDir = path.join(xdgBasedir.config || path.join(os.tmpdir(), '.config'), 'freeshare');
 
 mkdirp(configDir, function (err) {
@@ -27,7 +24,30 @@ mkdirp(configDir, function (err) {
     winston.add(winston.transports.File, { filename: path.join(configDir, 'app.log') });
 });
 
-app.on('ready', () => {  
+
+let mainWindow = null;
+let tray = null;
+
+const shouldQuit = app.makeSingleInstance((commandLine, workingDirectory) => {
+    // Someone tried to run a second instance, we should focus our window.
+    if (mainWindow) {
+        if (!mainWindow.isVisible()) mainWindow.show();
+        if (mainWindow.isMinimized()) mainWindow.restore();
+        mainWindow.focus();
+    }
+});
+
+if (shouldQuit) {
+    app.quit();
+    return;
+}
+
+
+let isAppReady = false;
+
+app.on('ready', () => {
+    isAppReady = true;
+    
     displayMainWindow();
     
     tray = new Tray(__dirname + '/app/icon.png');
@@ -54,6 +74,10 @@ app.on('activate', (event, hasVisibleWindows) => {
 app.on('window-all-closed', function () {
     if (process.platform != 'darwin') app.quit();
 });
+
+
+const FileServer = require('./app/file-server');
+let fileServer = new FileServer();
 
 ipcMain.on('init', function (event) {
     fs.readFile(path.join(configDir, 'config.json'), (err, data) => {
@@ -132,7 +156,7 @@ ipcMain.on('exit', function (event, code) {
 function displayMainWindow() {
     if (mainWindow) {
         mainWindow.show();
-    } else {
+    } else if (isAppReady) {
         mainWindow = new BrowserWindow({ width: 800, height: 600, icon: __dirname + '/app/icon.ico' });
 
         mainWindow.loadURL('file://' + __dirname + '/app/index.html');

@@ -7,12 +7,14 @@ const fs = require('fs');
 const _ = require('lodash');
 const send = require('send');
 const xdgBasedir = require('xdg-basedir');
+const winston = require('winston');
 const os = require('os');
 
 
 const configDir = path.join(xdgBasedir.config || path.join(os.tmpdir(), '.config'), 'freeshare');
-let instance = null;
 
+
+let instance = null;
 
 class FileServer {
     constructor() {
@@ -45,7 +47,7 @@ class FileServer {
             
             this.psyc = psychokinesis.createServer(this.config, (req, resp) => {
                 let reqUrl = url.parse(req.url);
-                let filename = decodeURI(path.basename(reqUrl.path));
+                let filename = decodeURI(path.basename(reqUrl.pathname));
 
                 if (this.fileMap.has(filename)) {
                     let filepath = this.fileMap.get(filename);
@@ -62,6 +64,10 @@ class FileServer {
             this.psyc.on('ready', () => {
                 this.started = true;
                 cb();
+            });
+
+            this.psyc.on('error', (err) => {
+                winston.error('file server error:', err);
             });
         });
     }
