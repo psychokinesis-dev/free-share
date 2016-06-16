@@ -11,7 +11,6 @@
           const psychokinesis = require('psychokinesis');
           const uuid = require('uuid');
           const request = require('request');
-          const math = require('mathjs');
           
           let waiting = false;
           
@@ -91,7 +90,7 @@
                   let nodes = JSON.parse(nodeList);
                   
                   if (nodes.length > 0) {
-                      let randNode = nodes[math.randomInt(nodes.length)];
+                      let randNode = nodes[Math.floor(Math.random() * nodes.length)];
                       document.getElementById("entryField").value = randNode.host + ':' + randNode.dhtPort + ':' + randNode.proxyPort;
                   }
                 }
