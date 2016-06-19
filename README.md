@@ -9,7 +9,11 @@
 - 扫码获取文件，方便在移动终端间使用。
 - 基于开放的去中心化网络，不受第三方控制且极易扩展。
 
+## 下载
+二进制包的下载链接请查看 [Release 页面](https://github.com/psychokinesis-dev/free-share/releases)。
+
 ## 构建
+### 安装依赖
 ```bash
 $ apt-get install nodejs npm
 $ npm install
@@ -17,12 +21,12 @@ $ npm install -g bower
 $ bower install
 ```
 
-## 启动
+### 启动
 ```bash
 $ npm start
 ```
 
-## 打包
+### 打包
 ```bash
 $ npm run-script pack
 ```
