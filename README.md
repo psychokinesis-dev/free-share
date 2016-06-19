@@ -1,6 +1,13 @@
 # free-share
 
-通过一条链接与他人分享本地的任何文件，基于 [js-psychokinesis](https://github.com/psychokinesis-dev/js-psychokinesis) 构建。
+![](app-screenshot.png)
+
+通过一条链接与他人分享本地的文件，基于 [js-psychokinesis](https://github.com/psychokinesis-dev/js-psychokinesis) 构建。
+
+## 特性
+- 快速分享，无需将文件上传至服务器即可与他人分享。
+- 扫码获取文件，方便在移动终端间使用。
+- 基于开放的去中心化网络，不受第三方控制且极易扩展。
 
 ## 构建
 ```bash
