@@ -18,8 +18,8 @@
   "author": "covertness",
   "license": "MIT",
   "devDependencies": {
-    "electron-packager": "^7.0.3",
-    "electron-prebuilt": "^1.2.1"
+    "electron": "^1.4.8",
+    "electron-packager": "^8.3.0"
   },
   "dependencies": {
     "lodash": "^4.11.1",
