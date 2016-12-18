@@ -21,30 +21,30 @@ class FileServer {
         if (!instance) {
             instance = this;
         }
-                
+
         return instance;
     }
-    
+
     setConfig(config) {
         this.config = _.defaultsDeep(config, {
             nodeIdFile: path.join(configDir, 'nodeid.data'),
             domain: 'test.com'
         });
     }
-    
+
     start(cb) {
         if (this.started) {
             cb();
             return;
         }
-        
+
         fs.readFile(path.join(configDir, 'files.json'), (err, data) => {
             if (err) {
                 this.fileMap = new Map();
             } else {
                 this.fileMap = new Map(JSON.parse(data));
             }
-            
+
             this.psyc = psychokinesis.createServer(this.config, (req, resp) => {
                 let reqUrl = url.parse(req.url);
                 let filename = decodeURI(path.basename(reqUrl.pathname));
@@ -62,8 +62,26 @@ class FileServer {
             });
 
             this.psyc.on('ready', () => {
-                this.started = true;
-                cb();
+                if (this.config.domain === 'localhost') {
+                    let ifaces = os.networkInterfaces();
+                    Object.keys(ifaces).forEach((dev) => {
+                        ifaces[dev].forEach((details) => {
+                            if (this.ip) return;
+
+                            if (details.family === 'IPv4' && details.address !== '127.0.0.1') {
+                                this.ip = details.address;
+                            }
+                        });
+                    });
+
+                    this.psyc.listen(this.ip, 8181, () => {
+                        this.started = true;
+                        cb();
+                    });
+                } else {
+                    this.started = true;
+                    cb();
+                }
             });
 
             this.psyc.on('error', (err) => {
@@ -71,48 +89,54 @@ class FileServer {
             });
         });
     }
-    
+
     addFile(filepath, cb) {
         let filename = path.basename(filepath);
-        
+
         if (this.fileMap.has(filename)) {
-            cb({desc: 'file name exists'});
+            cb({ desc: 'file name exists' });
             return;
         }
-        
+
         this.fileMap.set(filename, filepath);
         this._persistent((error) => {
             cb(error, this._covertFileInfo(filename))
         });
     }
-    
+
     removeFile(filename, cb) {
         if (!this.fileMap.has(filename)) {
-            cb({desc: 'file doesn\'t exists'});
+            cb({ desc: 'file doesn\'t exists' });
             return;
         }
-        
+
         this.fileMap.delete(filename);
         this._persistent(cb);
     }
-    
+
     forEachFile(cb) {
         this.fileMap.forEach((filepath, filename) => {
             cb(this._covertFileInfo(filename))
         })
     }
-    
+
     _persistent(cb) {
         let filesArray = Array.from(this.fileMap);
-        
+
         fs.writeFile(path.join(configDir, 'files.json'), JSON.stringify(filesArray), cb);
     }
-    
+
     _covertFileInfo(filename) {
+        if (this.config.domain === 'localhost') {
+            var fileURL = 'http://' + path.join(this.ip + ':8181', this.config.domain, filename).replace(/\\/g, '\/');
+        } else {
+            var fileURL = 'http://' + path.join(this.config.entryNode.host + ':' + (this.config.entryNode.dhtPort ? this.config.entryNode.dhtPort : this.config.port), this.config.domain, filename).replace(/\\/g, '\/');
+        }
+
         return {
             name: filename,
-            url: 'http://' + path.join(this.config.entryNode.host + ':' + (this.config.entryNode.dhtPort ? this.config.entryNode.dhtPort : this.config.port), this.config.domain, filename).replace(/\\/g, '\/')
-        };
+            url: fileURL
+        }
     }
 }
 

@@ -19,11 +19,24 @@
               prompt.innerHTML = '<strong>' + msg + '</strong>';
               prompt.style.display = 'inline';
           }
+
+          function changeLocalMode(localMode) {
+              let selfField = document.getElementById("selfField");
+              let entryField = document.getElementById("entryField");
+              
+              selfField.disabled = entryField.disabled = localMode;
+          }
           
           function submitConfig() {
               if (waiting) {
                   showErrorMsg('请稍等...');
                   return false;
+              }
+
+              let localMode = document.getElementById("localModeField").checked;
+              if (localMode === true) {
+                  ipcRenderer.send('set-config', {domain: 'localhost'});
+                  return;
               }
               
               let selfNode = document.getElementById("selfField").value;
@@ -75,6 +88,10 @@
               <input type="text" placeholder="mydomain.com" id="selfField">
               <label for="entryField">入口地址：</label>
               <input type="text" placeholder="entrynode.com:8181:18181" id="entryField">
+              <div class="float-right">
+                  <input type="checkbox" id="localModeField" onchange="changeLocalMode(this.checked)">
+                  <label class="label-inline" for="localModeField">开启本地模式</label>
+              </div>
               <div>
                   <span id="prompt" style="display: none; color: red"></span>
               </div>
