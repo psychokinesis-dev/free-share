@@ -8,6 +8,7 @@
 - 快速分享，无需将文件上传至服务器即可与他人分享。
 - 扫码获取文件，方便在移动终端间使用。
 - 基于开放的去中心化网络，不受第三方控制且极易扩展。
+- 支持文件夹分享。
 
 ## 下载
 二进制包的下载链接请查看 [Release 页面](https://github.com/psychokinesis-dev/free-share/releases)。

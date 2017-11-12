@@ -9,6 +9,9 @@ const send = require('send');
 const xdgBasedir = require('xdg-basedir');
 const winston = require('winston');
 const os = require('os');
+const readdirp = require('readdirp');
+const zipstream = require('zip-stream');
+const async = require('async');
 
 
 const configDir = path.join(xdgBasedir.config || path.join(os.tmpdir(), '.config'), 'freeshare');
@@ -49,15 +52,38 @@ class FileServer {
                 let reqUrl = url.parse(req.url);
                 let filename = decodeURI(path.basename(reqUrl.pathname));
 
-                if (this.fileMap.has(filename)) {
-                    let filepath = this.fileMap.get(filename);
+                if (!this.fileMap.has(filename)) {
+                    resp.end(filename + ' not found');
+                    return;
+                }
 
+                let filepath = this.fileMap.get(filename);
+
+                if (fs.lstatSync(filepath).isDirectory()) {
+                    readdirp({root: filepath}, function(err, items) {
+                        resp.setHeader('Content-Type', 'application/zip');
+                        resp.setHeader('Content-Disposition', 'attachment; filename="' + filename + '"');
+
+                        const zip = zipstream();
+                        zip.pipe(resp);
+
+                        async.forEachSeries(items.files, (file, cb) => {
+                            zip.entry(fs.createReadStream(file.fullPath), {name: file.path}, cb);
+                        }, (err) => {
+                            if (err) {
+                                resp.statusCode = 500;
+                                resp.end(err);
+                                return;
+                            }
+
+                            zip.finalize();
+                        });
+                    });
+                } else {
                     send(req, filepath).on('error', function (err) {
                         resp.statusCode = err.status || 500;
                         resp.end(err.message);
                     }).pipe(resp);
-                } else {
-                    resp.end(filename + ' not found');
                 }
             });
 
@@ -92,6 +118,10 @@ class FileServer {
 
     addFile(filepath, cb) {
         let filename = path.basename(filepath);
+
+        if (fs.lstatSync(filepath).isDirectory()) {
+            filename += '.zip';
+        }
 
         if (this.fileMap.has(filename)) {
             cb({ desc: 'file name exists' });
