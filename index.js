@@ -16,11 +16,11 @@ const mkdirp = require('mkdirp');
 const configDir = path.join(xdgBasedir.config || path.join(os.tmpdir(), '.config'), 'freeshare');
 
 mkdirp(configDir, function (err) {
-    if (err) { 
+    if (err) {
         console.error('make config path failed:', err);
         return;
     }
-    
+
     winston.add(winston.transports.File, { filename: path.join(configDir, 'app.log') });
 });
 
@@ -49,20 +49,20 @@ let isAppReady = false;
 
 app.on('ready', () => {
     isAppReady = true;
-    
+
     displayMainWindow();
-    
+
     tray = new Tray(__dirname + '/app/icon.png');
     tray.setToolTip('Free Share');
-    
+
     tray.on('click', (event, bounds) => {
         displayMainWindow();
     });
-    
+
     tray.on('right-click', (event, bounds) => {
         displayMainWindow();
     });
-    
+
     tray.on('double-click', (event, bounds) => {
         displayMainWindow();
     });
@@ -78,8 +78,11 @@ app.on('window-all-closed', function () {
 });
 
 
+const FileStore = require('./app/file-store');
 const FileServer = require('./app/file-server');
-let fileServer = new FileServer();
+
+let fileStore = new FileStore();
+let fileServer = new FileServer(fileStore);
 
 ipcMain.on('init', function (event) {
     fs.readFile(path.join(configDir, 'config.json'), (err, data) => {
@@ -93,17 +96,22 @@ ipcMain.on('init', function (event) {
             return;
         }
 
-        let config = JSON.parse(data);
-        fileServer.setConfig(config);
-        fs.writeFile(path.join(configDir, 'config.json'), JSON.stringify(fileServer.config));
+        fileStore.init().then(() => {
+            let config = JSON.parse(data);
+            fileServer.setConfig(config);
+            fs.writeFile(path.join(configDir, 'config.json'), JSON.stringify(fileServer.config));
 
-        fileServer.start(() => {
-            let files = [];
-            fileServer.forEachFile((fileInfo) => {
-                files.push(fileInfo);
+            fileServer.start(() => {
+                let files = [];
+                fileServer.forEachFile((fileInfo) => {
+                    files.push(fileInfo);
+                });
+
+                mainWindow.webContents.send('started', files);
             });
-        
-            mainWindow.webContents.send('started', files);
+        }, (error) => {
+            winston.error(err);
+            app.exit(1);
         });
     });
 });
@@ -111,7 +119,7 @@ ipcMain.on('init', function (event) {
 ipcMain.on('set-config', function (event, config) {
     fileServer.setConfig(config);
     fs.writeFile(path.join(configDir, 'config.json'), JSON.stringify(fileServer.config));
-    
+
     mainWindow.webContents.send('configured', config);
 });
 
@@ -132,9 +140,21 @@ ipcMain.on('add-file', function (event, filePath) {
             winston.error('add file error:', error);
             return;
         }
-        
+
         updateFilesView();
         winston.info('add file:', filePath);
+    });
+});
+
+ipcMain.on('store-file', function (event, fileName) {
+    fileServer.storeFile(fileName, (error, _fileInfo) => {
+        if (error) {
+            winston.error('store file error:', error);
+            return;
+        }
+
+        updateFilesView();
+        winston.info('store file:', fileName);
     });
 });
 
@@ -144,7 +164,7 @@ ipcMain.on('remove-file', function (event, fileName) {
             winston.error('remove file error:', error);
             return;
         }
-        
+
         updateFilesView();
         winston.info('remove file:', fileName);
     });

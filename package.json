@@ -29,6 +29,7 @@
     "readdirp": "^2.1.0",
     "request": "^2.72.0",
     "send": "^0.13.2",
+    "split-file": "^2.1.0",
     "uuid": "^2.0.2",
     "winston": "^2.2.0",
     "xdg-basedir": "^2.0.0",

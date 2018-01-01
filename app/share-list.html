@@ -12,6 +12,7 @@
             <td><qrcode version="12" error-correction-level="M" size="150" data="{{file.url}}"></qrcode></td>
             <td>
                 <button id="copy-btn-$index" ng-click="copyURL(files, $index)">复制 URL</button>
+                <a ng-hide="file.type === 1" class="button" href="" ng-click="store(files, $index)">{{file.storeState | storeStateToPrompt}}</a>
                 <a class="button" href="" ng-click="remove(files, $index)">移除</a></td>
         </tr>
     </tbody>

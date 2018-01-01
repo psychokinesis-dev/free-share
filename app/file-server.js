@@ -20,11 +20,12 @@ const configDir = path.join(xdgBasedir.config || path.join(os.tmpdir(), '.config
 let instance = null;
 
 class FileServer {
-    constructor() {
+    constructor(store) {
         if (!instance) {
             instance = this;
         }
 
+        instance.store = store;
         return instance;
     }
 
@@ -57,10 +58,11 @@ class FileServer {
                     return;
                 }
 
-                let filepath = this.fileMap.get(filename);
+                let fileInfo = this.fileMap.get(filename);
+                let filepath = fileInfo.path;
 
-                if (fs.lstatSync(filepath).isDirectory()) {
-                    readdirp({root: filepath}, function(err, items) {
+                if (fileInfo.type === 1) {
+                    readdirp({ root: filepath }, function (err, items) {
                         resp.setHeader('Content-Type', 'application/zip');
                         resp.setHeader('Content-Disposition', 'attachment; filename="' + filename + '"');
 
@@ -68,7 +70,7 @@ class FileServer {
                         zip.pipe(resp);
 
                         async.forEachSeries(items.files, (file, cb) => {
-                            zip.entry(fs.createReadStream(file.fullPath), {name: file.path}, cb);
+                            zip.entry(fs.createReadStream(file.fullPath), { name: file.path }, cb);
                         }, (err) => {
                             if (err) {
                                 resp.statusCode = 500;
@@ -118,9 +120,11 @@ class FileServer {
 
     addFile(filepath, cb) {
         let filename = path.basename(filepath);
+        let fileType = 0;                         // file
 
         if (fs.lstatSync(filepath).isDirectory()) {
             filename += '.zip';
+            fileType = 1;                         // directory
         }
 
         if (this.fileMap.has(filename)) {
@@ -128,10 +132,35 @@ class FileServer {
             return;
         }
 
-        this.fileMap.set(filename, filepath);
+        const fileInfo = {
+            key: filename,
+            path: filepath,
+            type: fileType,
+            storeState: 0
+        };
+
+        this.fileMap.set(fileInfo.key, fileInfo);
         this._persistent((error) => {
-            cb(error, this._covertFileInfo(filename))
+            cb(error, this._covertFileInfo(fileInfo))
         });
+    }
+
+    storeFile(filename, cb) {
+        if (!this.fileMap.has(filename)) {
+            cb({ desc: 'file doesn\'t exists' });
+            return;
+        }
+
+        const fileInfo = this.fileMap.get(filename);
+
+        if (fileInfo.type === 1) {
+            cb({ desc: 'directory is not supported yet' });
+            return;
+        }
+
+        fileInfo.storeState = 1;
+
+        this._persistent(cb);
     }
 
     removeFile(filename, cb) {
@@ -145,8 +174,8 @@ class FileServer {
     }
 
     forEachFile(cb) {
-        this.fileMap.forEach((filepath, filename) => {
-            cb(this._covertFileInfo(filename))
+        this.fileMap.forEach((fileInfo, filename) => {
+            cb(this._covertFileInfo(fileInfo))
         })
     }
 
@@ -156,16 +185,20 @@ class FileServer {
         fs.writeFile(path.join(configDir, 'files.json'), JSON.stringify(filesArray), cb);
     }
 
-    _covertFileInfo(filename) {
+    _covertFileInfo(fileInfo) {
+        const filename = fileInfo.key;
+        let fileURL;
         if (this.config.domain === 'localhost') {
-            var fileURL = 'http://' + path.join(this.ip + ':8181', this.config.domain, filename).replace(/\\/g, '\/');
+            fileURL = 'http://' + path.join(this.ip + ':8181', this.config.domain, filename).replace(/\\/g, '\/');
         } else {
-            var fileURL = 'http://' + path.join(this.config.entryNode.host + ':' + (this.config.entryNode.dhtPort ? this.config.entryNode.dhtPort : this.config.port), this.config.domain, filename).replace(/\\/g, '\/');
+            fileURL = 'http://' + path.join(this.config.entryNode.host + ':' + (this.config.entryNode.dhtPort ? this.config.entryNode.dhtPort : this.config.port), this.config.domain, filename).replace(/\\/g, '\/');
         }
 
         return {
             name: filename,
-            url: fileURL
+            url: fileURL,
+            type: fileInfo.type,
+            storeState: fileInfo.storeState
         }
     }
 }

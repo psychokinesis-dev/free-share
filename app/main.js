@@ -53,13 +53,22 @@ angular.module('free-share', ['ngRoute', 'angularSpinner', 'monospaced.qrcode'])
     })
     .controller('ShareListController', ($scope, $route, $routeParams, $location) => {
         $scope.files = fileArray ? fileArray : [];
-        
+
         ipcRenderer.on('files-updated', function (event, files) {
             fileArray = files;
             $scope.files = fileArray;
             $scope.$apply();
         });
         
+        $scope.store = function (files, index) {
+            let fileName = files[index].name;
+
+            // processing
+            if (files[index].storeState === 1) return;
+
+            ipcRenderer.send('store-file', fileName);
+        };
+
         $scope.remove = function (files, index) {
             let fileName = files[index].name;
 
@@ -98,4 +107,13 @@ angular.module('free-share', ['ngRoute', 'angularSpinner', 'monospaced.qrcode'])
                 templateUrl: 'share-list.html',
                 controller: 'ShareListController'
             });
+    }).filter('storeStateToPrompt',function(){
+        return function (state) {
+            switch(state) {
+                case 0: return '离线分享';
+                case 1: return '处理中';
+                case 2: return '取消离线分享';
+                default: return '';
+            }
+        };
     });
