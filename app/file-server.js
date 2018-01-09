@@ -158,6 +158,8 @@ class FileServer {
             return;
         }
 
+        this.store.addFile(fileInfo);
+
         fileInfo.storeState = 1;
 
         this._persistent(cb);

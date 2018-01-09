@@ -85,18 +85,18 @@ let fileStore = new FileStore();
 let fileServer = new FileServer(fileStore);
 
 ipcMain.on('init', function (event) {
-    fs.readFile(path.join(configDir, 'config.json'), (err, data) => {
-        if (err) {
-            if (err.code === 'ENOENT') {
-                mainWindow.webContents.send('bootstrap');
-            } else {
-                winston.error(err);
-                app.exit(1);
+    fileStore.init().then(() => {
+        fs.readFile(path.join(configDir, 'config.json'), (err, data) => {
+            if (err) {
+                if (err.code === 'ENOENT') {
+                    mainWindow.webContents.send('bootstrap');
+                } else {
+                    winston.error(err);
+                    app.exit(1);
+                }
+                return;
             }
-            return;
-        }
 
-        fileStore.init().then(() => {
             let config = JSON.parse(data);
             fileServer.setConfig(config);
             fs.writeFile(path.join(configDir, 'config.json'), JSON.stringify(fileServer.config));
@@ -109,10 +109,10 @@ ipcMain.on('init', function (event) {
 
                 mainWindow.webContents.send('started', files);
             });
-        }, (error) => {
-            winston.error(err);
-            app.exit(1);
         });
+    }, (error) => {
+        winston.error(err);
+        app.exit(1);
     });
 });
 
