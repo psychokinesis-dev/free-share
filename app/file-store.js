@@ -3,9 +3,12 @@ const mkdirp = require('mkdirp');
 const path = require('path');
 const fs = require('fs');
 const splitFile = require('split-file');
+const async = require('async');
+const xdgBasedir = require('xdg-basedir');
+const md5File = require('md5-file');
 
-const tempDir = os.tmpdir();
-const tempStoreDir = path.join(tempDir, 'free-share-store');
+
+const storeDir = path.join(xdgBasedir.data || path.join(os.tmpdir(), '.local'), 'free-share-store');
 
 let instance = null;
 
@@ -25,7 +28,7 @@ class FileStore {
         console.log('store init success');
 
         return new Promise((resolve, reject) => {
-            mkdirp(tempStoreDir, (err) => {
+            mkdirp(storeDir, (err) => {
                 if (err) { 
                     console.error('create store path failed:', err);
                     reject(err);
@@ -40,7 +43,7 @@ class FileStore {
     addFile(fileInfo) {
         this.fileMap.set(fileInfo.key, fileInfo);
 
-        this._addFileWorker(fileInfo.key);
+        return this._addFileWorker(fileInfo.key);
     }
     
     _addFileWorker(key) {
@@ -48,11 +51,40 @@ class FileStore {
         const filePath = fileInfo.path;
 
         return new Promise((resolve, reject) => {
-            const dest = path.join(tempStoreDir, key);
+            const dest = path.join(storeDir, key);
+
             fs.createReadStream(filePath).pipe(fs.createWriteStream(dest)).on('finish', () => {
                 splitFile.splitFile(dest, 3)
                 .then((files) => {
-                    console.log(files);
+                    async.map(files, (file, cb) => {
+                        md5File(file, (err, hash) => {
+                            if (err) {
+                                return cb(err);
+                            }
+
+                            const finalFilePath = path.join(storeDir, hash);
+                            fs.rename(file, finalFilePath, (err) => {
+                                if (err) {
+                                    return cb(err);
+                                }
+
+                                cb(null, {
+                                    path: finalFilePath,
+                                    name: hash
+                                });
+                            });
+                        });
+                    }, (err, files) => {
+                        if (err) {
+                            return reject(err);
+                        }
+
+                        fs.unlink(dest);
+
+                        console.log('finished', files);
+
+                        resolve();
+                    });
                 })
                 .catch((error) => {
                     console.log(error);

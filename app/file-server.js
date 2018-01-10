@@ -145,24 +145,31 @@ class FileServer {
         });
     }
 
-    storeFile(filename, cb) {
+    storeFile(filename, storeCB, finishCB) {
         if (!this.fileMap.has(filename)) {
-            cb({ desc: 'file doesn\'t exists' });
+            storeCB({ desc: 'file doesn\'t exists' });
             return;
         }
 
         const fileInfo = this.fileMap.get(filename);
 
         if (fileInfo.type === 1) {
-            cb({ desc: 'directory is not supported yet' });
+            storeCB({ desc: 'directory is not supported yet' });
             return;
         }
 
-        this.store.addFile(fileInfo);
+        this.store.addFile(fileInfo).then(() => {
+            fileInfo.storeState = 2;
+            this._persistent(storeCB);
+
+            finishCB();
+        }, (error) => {
+            finishCB(error);
+        });
 
         fileInfo.storeState = 1;
 
-        this._persistent(cb);
+        this._persistent(storeCB);
     }
 
     removeFile(filename, cb) {

@@ -154,7 +154,15 @@ ipcMain.on('store-file', function (event, fileName) {
         }
 
         updateFilesView();
-        winston.info('store file:', fileName);
+        winston.info('storing file:', fileName);
+    }, (error) => {
+        if (error) {
+            winston.error('store file error:', error);
+            return;
+        }
+
+        updateFilesView();
+        winston.info('store file success:', fileName);
     });
 });
 

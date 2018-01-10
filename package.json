@@ -24,6 +24,7 @@
   "dependencies": {
     "async": "^2.6.0",
     "lodash": "^4.11.1",
+    "md5-file": "^3.2.3",
     "mkdirp": "^0.5.1",
     "psychokinesis": "^1.0.6",
     "readdirp": "^2.1.0",
