@@ -15,13 +15,15 @@ const mkdirp = require('mkdirp');
 
 const configDir = path.join(xdgBasedir.config || path.join(os.tmpdir(), '.config'), 'freeshare');
 
-mkdirp(configDir, function (err) {
+mkdirp(configDir, function(err) {
     if (err) {
         console.error('make config path failed:', err);
         return;
     }
 
-    winston.add(winston.transports.File, { filename: path.join(configDir, 'app.log') });
+    winston.add(winston.transports.File, {
+        filename: path.join(configDir, 'app.log')
+    });
 });
 
 
@@ -73,7 +75,7 @@ app.on('activate', (event, hasVisibleWindows) => {
 });
 
 // Quit when all windows are closed.
-app.on('window-all-closed', function () {
+app.on('window-all-closed', function() {
     if (process.platform != 'darwin') app.quit();
 });
 
@@ -84,23 +86,24 @@ const FileServer = require('./app/file-server');
 let fileStore = new FileStore();
 let fileServer = new FileServer(fileStore);
 
-ipcMain.on('init', function (event) {
-    fileStore.init().then(() => {
-        fs.readFile(path.join(configDir, 'config.json'), (err, data) => {
-            if (err) {
-                if (err.code === 'ENOENT') {
-                    mainWindow.webContents.send('bootstrap');
-                } else {
-                    winston.error(err);
-                    app.exit(1);
-                }
-                return;
+ipcMain.on('init', function(event) {
+    fs.readFile(path.join(configDir, 'config.json'), (err, data) => {
+        if (err) {
+            if (err.code === 'ENOENT') {
+                mainWindow.webContents.send('bootstrap');
+            } else {
+                winston.error(err);
+                app.exit(1);
             }
+            return;
+        }
 
-            let config = JSON.parse(data);
-            fileServer.setConfig(config);
-            fs.writeFile(path.join(configDir, 'config.json'), JSON.stringify(fileServer.config));
+        let config = JSON.parse(data);
+        fileServer.setConfig(config);
+        fileStore.setConfig(config);
+        fs.writeFile(path.join(configDir, 'config.json'), JSON.stringify(fileServer.config));
 
+        fileStore.init().then(() => {
             fileServer.start(() => {
                 let files = [];
                 fileServer.forEachFile((fileInfo) => {
@@ -109,6 +112,30 @@ ipcMain.on('init', function (event) {
 
                 mainWindow.webContents.send('started', files);
             });
+        }, (error) => {
+            winston.error(err);
+            app.exit(1);
+        });
+    });
+});
+
+ipcMain.on('set-config', function(event, config) {
+    fileServer.setConfig(config);
+    fileStore.setConfig(config);
+    fs.writeFile(path.join(configDir, 'config.json'), JSON.stringify(fileServer.config));
+
+    mainWindow.webContents.send('configured', config);
+});
+
+ipcMain.on('start-file-server', function(event) {
+    fileStore.init().then(() => {
+        fileServer.start(() => {
+            let files = [];
+            fileServer.forEachFile((fileInfo) => {
+                files.push(fileInfo);
+            });
+
+            mainWindow.webContents.send('started', files);
         });
     }, (error) => {
         winston.error(err);
@@ -116,25 +143,7 @@ ipcMain.on('init', function (event) {
     });
 });
 
-ipcMain.on('set-config', function (event, config) {
-    fileServer.setConfig(config);
-    fs.writeFile(path.join(configDir, 'config.json'), JSON.stringify(fileServer.config));
-
-    mainWindow.webContents.send('configured', config);
-});
-
-ipcMain.on('start-file-server', function (event) {
-    fileServer.start(() => {
-        let files = [];
-        fileServer.forEachFile((fileInfo) => {
-            files.push(fileInfo);
-        });
-
-        mainWindow.webContents.send('started', files);
-    });
-});
-
-ipcMain.on('add-file', function (event, filePath) {
+ipcMain.on('add-file', function(event, filePath) {
     fileServer.addFile(filePath, (error, _fileInfo) => {
         if (error) {
             winston.error('add file error:', error);
@@ -146,7 +155,7 @@ ipcMain.on('add-file', function (event, filePath) {
     });
 });
 
-ipcMain.on('store-file', function (event, fileName) {
+ipcMain.on('store-file', function(event, fileName) {
     fileServer.storeFile(fileName, (error, _fileInfo) => {
         if (error) {
             winston.error('store file error:', error);
@@ -166,7 +175,7 @@ ipcMain.on('store-file', function (event, fileName) {
     });
 });
 
-ipcMain.on('remove-file', function (event, fileName) {
+ipcMain.on('remove-file', function(event, fileName) {
     fileServer.removeFile(fileName, (error) => {
         if (error) {
             winston.error('remove file error:', error);
@@ -178,7 +187,7 @@ ipcMain.on('remove-file', function (event, fileName) {
     });
 });
 
-ipcMain.on('exit', function (event, code) {
+ipcMain.on('exit', function(event, code) {
     app.exit(code);
 });
 
@@ -187,7 +196,11 @@ function displayMainWindow() {
     if (mainWindow) {
         mainWindow.show();
     } else if (isAppReady) {
-        mainWindow = new BrowserWindow({ width: 800, height: 600, icon: __dirname + '/app/icon.ico' });
+        mainWindow = new BrowserWindow({
+            width: 800,
+            height: 600,
+            icon: __dirname + '/app/icon.ico'
+        });
 
         mainWindow.loadURL('file://' + __dirname + '/app/index.html');
 

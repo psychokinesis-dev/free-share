@@ -42,7 +42,7 @@ class FileServer {
             return;
         }
 
-        fs.readFile(path.join(configDir, 'files.json'), (err, data) => {
+        fs.readFile(path.join(configDir, 'files.json'), 'utf8', (err, data) => {
             if (err) {
                 this.fileMap = new Map();
             } else {
@@ -52,6 +52,12 @@ class FileServer {
             this.psyc = psychokinesis.createServer(this.config, (req, resp) => {
                 let reqUrl = url.parse(req.url);
                 let filename = decodeURI(path.basename(reqUrl.pathname));
+                let dir = decodeURI(path.dirname(reqUrl.pathname));
+
+                if (dir === '/chunks') {
+                    this.store.handleRequest(filename, req, resp);
+                    return;
+                }
 
                 if (!this.fileMap.has(filename)) {
                     resp.end(filename + ' not found');
@@ -158,7 +164,8 @@ class FileServer {
             return;
         }
 
-        this.store.addFile(fileInfo).then(() => {
+        this.store.addFile(fileInfo).then((storeId) => {
+            fileInfo.storeId = storeId;
             fileInfo.storeState = 2;
             this._persistent(storeCB);
 
@@ -200,7 +207,13 @@ class FileServer {
         if (this.config.domain === 'localhost') {
             fileURL = 'http://' + path.join(this.ip + ':8181', this.config.domain, filename).replace(/\\/g, '\/');
         } else {
-            fileURL = 'http://' + path.join(this.config.entryNode.host + ':' + (this.config.entryNode.dhtPort ? this.config.entryNode.dhtPort : this.config.port), this.config.domain, filename).replace(/\\/g, '\/');
+            const host = this.config.entryNode.host + ':' + (this.config.entryNode.dhtPort ? this.config.entryNode.dhtPort : this.config.port);
+
+            if (fileInfo.storeId != null) {
+                fileURL = 'http://' + path.join(host, 'offline', fileInfo.storeId.toString()).replace(/\\/g, '\/');
+            } else {
+                fileURL = 'http://' + path.join(host, this.config.domain, filename).replace(/\\/g, '\/');
+            }
         }
 
         return {
