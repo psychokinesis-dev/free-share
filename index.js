@@ -84,10 +84,12 @@ const FileStore = require('./app/file-store');
 const FileServer = require('./app/file-server');
 
 let fileStore = new FileStore();
-let fileServer = new FileServer(fileStore);
+let fileServer = new FileServer(fileStore, () => {
+    updateFilesView();
+});
 
 ipcMain.on('init', function(event) {
-    fs.readFile(path.join(configDir, 'config.json'), (err, data) => {
+    fs.readFile(path.join(configDir, 'config_v2.json'), (err, data) => {
         if (err) {
             if (err.code === 'ENOENT') {
                 mainWindow.webContents.send('bootstrap');
@@ -101,7 +103,7 @@ ipcMain.on('init', function(event) {
         let config = JSON.parse(data);
         fileServer.setConfig(config);
         fileStore.setConfig(config);
-        fs.writeFile(path.join(configDir, 'config.json'), JSON.stringify(fileServer.config));
+        fs.writeFile(path.join(configDir, 'config_v2.json'), JSON.stringify(fileServer.config));
 
         fileStore.init().then(() => {
             fileServer.start(() => {
@@ -122,7 +124,7 @@ ipcMain.on('init', function(event) {
 ipcMain.on('set-config', function(event, config) {
     fileServer.setConfig(config);
     fileStore.setConfig(config);
-    fs.writeFile(path.join(configDir, 'config.json'), JSON.stringify(fileServer.config));
+    fs.writeFile(path.join(configDir, 'config_v2.json'), JSON.stringify(fileServer.config));
 
     mainWindow.webContents.send('configured', config);
 });

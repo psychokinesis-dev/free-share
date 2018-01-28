@@ -108,11 +108,12 @@ angular.module('free-share', ['ngRoute', 'angularSpinner', 'monospaced.qrcode'])
                 controller: 'ShareListController'
             });
     }).filter('storeStateToPrompt',function(){
-        return function (state) {
+        return function (file) {
+            const state = file.storeState;
             switch(state) {
                 case 0: return '离线分享';
                 case 1: return '处理中';
-                case 2: return '取消离线分享';
+                case 2: return '离线分享中 ' + file.storeRate.toFixed(2);
                 default: return '';
             }
         };

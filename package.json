@@ -1,11 +1,11 @@
 {
   "name": "free-share",
-  "version": "0.2.1",
+  "version": "0.3.0",
   "description": "Share anything with one link",
   "main": "index.js",
   "scripts": {
     "start": "electron index.js",
-    "pack": "electron-packager ./ free-share --platform=all --arch=all --icon ./app/icon.ico --out ../free-share-dist --overwrite && cd ../free-share-dist && for file in ./*; do if test -d $file; then zip --symlinks -r $file-v0.2.0.zip $file; fi; done",
+    "pack": "electron-packager ./ free-share --platform=all --arch=all --icon ./app/icon.ico --out ../free-share-dist --overwrite && cd ../free-share-dist && for file in ./*; do if test -d $file; then zip --symlinks -r $file-v0.3.0.zip $file; fi; done",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "repository": {

@@ -9,7 +9,6 @@ const md5File = require('md5-file');
 const request = require('request');
 const send = require('send');
 
-const fileRecorderHost = '192.168.0.100:3000';
 const configDir = path.join(xdgBasedir.config || path.join(os.tmpdir(), '.config'), 'freeshare');
 const storeDir = path.join(xdgBasedir.data || path.join(os.tmpdir(), '.local'), 'free-share-store');
 
@@ -60,6 +59,8 @@ class FileStore {
             nodeIdFile: path.join(configDir, 'nodeid.data'),
             domain: 'test.com'
         }, config);
+
+        this.fileRecorderHost = this.config.entryNode.host + ':3000';
     }
 
     addFile(fileInfo) {
@@ -75,6 +76,24 @@ class FileStore {
             response.statusCode = err.status || 500;
             response.end(err.message);
         }).pipe(response);
+    }
+
+    listPartitionContributors(partitions, cb) {
+        request({
+            method: 'POST',
+            url: 'http://' + this.fileRecorderHost + '/v1/list-contributor',
+            body: {
+                partition_hash: partitions
+            },
+            json: true
+        }, (error, httpResponse, body) => {
+            if (error || httpResponse.statusCode != 200) {
+                cb('request recorder host failed');
+                return;
+            }
+
+            cb(null, body.contributors);
+        });
     }
 
     _addFileWorker(key) {
@@ -135,7 +154,7 @@ class FileStore {
 
                             request({
                                 method: 'POST',
-                                url: 'http://' + fileRecorderHost + '/v1/create-file',
+                                url: 'http://' + this.fileRecorderHost + '/v1/create-file',
                                 body: {
                                     name: key,
                                     size: originalFileStats.size,
@@ -144,7 +163,10 @@ class FileStore {
                                 json: true
                             }, (error, httpResponse, body) => {
                                 if (!error && httpResponse.statusCode == 200) {
-                                    resolve(body.id);
+                                    resolve({
+                                        id: body.id,
+                                        partitions: partitions
+                                    });
                                 } else {
                                     reject(error);
                                 }
@@ -169,10 +191,10 @@ class FileStore {
 
         request({
             method: 'POST',
-            url: 'http://' + fileRecorderHost + '/v1/add-contributer',
+            url: 'http://' + this.fileRecorderHost + '/v1/add-contributor',
             body: {
-                contributer: this.config.domain,
-                partitionHash: partitionsArray
+                contributor: this.config.domain,
+                partition_hash: partitionsArray
             },
             json: true
         }, (error, httpResponse, body) => {
@@ -185,7 +207,7 @@ class FileStore {
     _fetchLatestPartitions() {
         request({
             method: 'GET',
-            url: 'http://' + fileRecorderHost + '/v1/list-file?offset=0&limit=10',
+            url: 'http://' + this.fileRecorderHost + '/v1/list-file?offset=0&limit=10',
             json: true
         }, (error, httpResponse, body) => {
             if (error || httpResponse.statusCode != 200) {
@@ -204,7 +226,7 @@ class FileStore {
 
                 request({
                     method: 'GET',
-                    url: 'http://' + fileRecorderHost + '/v1/detail-file?id=' + fileId,
+                    url: 'http://' + this.fileRecorderHost + '/v1/detail-file?id=' + fileId,
                     json: true
                 }, (error, httpResponse, body) => {
                     if (error || httpResponse.statusCode != 200) {

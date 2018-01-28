@@ -20,12 +20,13 @@ const configDir = path.join(xdgBasedir.config || path.join(os.tmpdir(), '.config
 let instance = null;
 
 class FileServer {
-    constructor(store) {
+    constructor(store, triggerUpdateFilesView) {
         if (!instance) {
             instance = this;
         }
 
         instance.store = store;
+        instance.triggerUpdateFilesView = triggerUpdateFilesView;
         return instance;
     }
 
@@ -42,12 +43,20 @@ class FileServer {
             return;
         }
 
-        fs.readFile(path.join(configDir, 'files.json'), 'utf8', (err, data) => {
+        fs.readFile(path.join(configDir, 'files_v2.json'), 'utf8', (err, data) => {
             if (err) {
                 this.fileMap = new Map();
             } else {
                 this.fileMap = new Map(JSON.parse(data));
             }
+
+            this.fileMap.forEach((fileInfo, filename) => {
+                const partitions = fileInfo.partitions;
+                if (!partitions) return;
+
+                // reset online
+                partitions.forEach(p => p.online = 0);
+            });
 
             this.psyc = psychokinesis.createServer(this.config, (req, resp) => {
                 let reqUrl = url.parse(req.url);
@@ -121,6 +130,10 @@ class FileServer {
             this.psyc.on('error', (err) => {
                 winston.error('file server error:', err);
             });
+
+            this.refreshInterval = setInterval(() => {
+                this._fetchFileContributors();
+            }, 10 * 1000);
         });
     }
 
@@ -164,8 +177,9 @@ class FileServer {
             return;
         }
 
-        this.store.addFile(fileInfo).then((storeId) => {
-            fileInfo.storeId = storeId;
+        this.store.addFile(fileInfo).then((storeInfo) => {
+            fileInfo.storeId = storeInfo.id;
+            fileInfo.partitions = storeInfo.partitions;
             fileInfo.storeState = 2;
             this._persistent(storeCB);
 
@@ -198,7 +212,7 @@ class FileServer {
     _persistent(cb) {
         let filesArray = Array.from(this.fileMap);
 
-        fs.writeFile(path.join(configDir, 'files.json'), JSON.stringify(filesArray), cb);
+        fs.writeFile(path.join(configDir, 'files_v2.json'), JSON.stringify(filesArray), cb);
     }
 
     _covertFileInfo(fileInfo) {
@@ -216,12 +230,44 @@ class FileServer {
             }
         }
 
+        let storeRate;
+        if (fileInfo.partitions) {
+            const total = fileInfo.partitions.reduce((a, p) => {
+                return a + (p.online || 0);
+            }, 0);
+
+            storeRate = total / fileInfo.partitions.length;
+        }
+
         return {
             name: filename,
             url: fileURL,
             type: fileInfo.type,
-            storeState: fileInfo.storeState
+            storeState: fileInfo.storeState,
+            storeRate: storeRate
         }
+    }
+
+    _fetchFileContributors() {
+        this.fileMap.forEach((fileInfo, filename) => {
+            const partitions = fileInfo.partitions;
+            if (!partitions) return;
+
+            const partitionsArray = partitions.map(p => p.hash);
+
+            this.store.listPartitionContributors(partitionsArray, (error, contributors) => {
+                if (error) {
+                    winston.error('fetch file contributors error:', error);
+                    return;
+                }
+
+                contributors.forEach((c, i) => {
+                    partitions[i].online = c.length;
+                });
+
+                this.triggerUpdateFilesView();
+            });
+        })
     }
 }
 
