@@ -230,7 +230,6 @@ class FileStore {
                     json: true
                 }, (error, httpResponse, body) => {
                     if (error || httpResponse.statusCode != 200) {
-                        console.log(error, httpResponse.statusCode);
                         callback(error);
                         return;
                     }

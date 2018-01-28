@@ -79,7 +79,7 @@ class FileServer {
                 if (fileInfo.type === 1) {
                     readdirp({ root: filepath }, function (err, items) {
                         resp.setHeader('Content-Type', 'application/zip');
-                        resp.setHeader('Content-Disposition', 'attachment; filename="' + filename + '"');
+                        resp.setHeader('Content-Disposition', 'attachment; filename="' + encodeURI(filename) + '"');
 
                         const zip = zipstream();
                         zip.pipe(resp);
